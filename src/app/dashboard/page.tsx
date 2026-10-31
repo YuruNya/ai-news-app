@@ -6,7 +6,11 @@ import { desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
 import { CategoryBar } from "@/components/category-bar";
+import { FetchNewsButton } from "@/components/fetch-news-button";
 import { NewsCard } from "@/components/news-card";
+import { Pagination } from "@/components/pagination";
+
+const PAGE_SIZE = 9;
 
 export const metadata: Metadata = {
   title: "대시보드 · AI 뉴스 수집기",
@@ -19,7 +23,10 @@ export default function DashboardPage({ searchParams }: PageProps<"/dashboard">)
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <h1 className="text-lg font-bold tracking-tight">AI 뉴스 수집기</h1>
           {/* 프로필 사진·이름을 보여주고, 누르면 계정 관리와 로그아웃 메뉴가 열린다. */}
-          <UserButton showName />
+          <div className="flex items-center gap-3">
+            <FetchNewsButton />
+            <UserButton showName />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
@@ -40,7 +47,7 @@ async function DashboardContent({
   const { userId } = await auth();
   if (!userId) return null;
 
-  const { category } = await searchParams;
+  const { category, page: pageParam } = await searchParams;
   const param = typeof category === "string" ? category : undefined;
 
   const categoryList = await db
@@ -63,6 +70,26 @@ async function DashboardContent({
         ? eq(articles.categoryId, selectedCategory.id)
         : undefined;
 
+  const total = await db.$count(articles, filter);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const requested = Number.parseInt(
+    typeof pageParam === "string" ? pageParam : "",
+    10,
+  );
+  // 잘못된 값이나 범위를 벗어난 값은 가장 가까운 유효 페이지로 맞춘다.
+  const page = Math.min(
+    Math.max(Number.isNaN(requested) ? 1 : requested, 1),
+    totalPages,
+  );
+
+  const hrefFor = (p: number) => {
+    const qs = new URLSearchParams();
+    if (selected !== "all") qs.set("category", selected);
+    if (p > 1) qs.set("page", String(p));
+    const s = qs.toString();
+    return s ? `/dashboard?${s}` : "/dashboard";
+  };
+
   const rows = await db
     .select({
       id: articles.id,
@@ -84,7 +111,8 @@ async function DashboardContent({
       desc(sql`coalesce(${articles.publishedAt}, ${articles.fetchedAt})`),
       desc(articles.id),
     )
-    .limit(60);
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
   return (
     <>
@@ -102,6 +130,7 @@ async function DashboardContent({
           ))}
         </div>
       )}
+      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </>
   );
 }
