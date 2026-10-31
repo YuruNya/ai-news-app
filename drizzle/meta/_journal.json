@@ -8,6 +8,20 @@
       "when": 1793459031423,
       "tag": "0000_quick_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793462194447,
+      "tag": "0001_curious_maelstrom",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793464963526,
+      "tag": "0002_bumpy_goliath",
+      "breakpoints": true
     }
   ]
 }

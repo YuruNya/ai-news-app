@@ -26,7 +26,7 @@
 
 ## 5. 핵심 결정 사항
 - 로그인 필수: 앱 실행 시 비로그인 사용자는 로그인 화면으로 이동.
-- 데이터 범위: 기사·번역·요약은 **공용**(1회만 생성해 비용 절약), 카테고리와 Notion 저장 상태는 **사용자별**.
+- 데이터 범위: **단일 사용자 앱**. 사용자별 데이터 분리 없이 기사·번역·요약·카테고리·Notion 저장 상태를 모두 `articles`/`categories` 2개 테이블에 둔다. 번역·요약은 기사당 1회만 생성해 비용을 절약한다.
 - 분류 방식: 사용자가 정의한 카테고리 목록 중에서 Claude가 선택. 해당 없으면 "기타".
 - Notion 저장 위치: 환경변수로 지정한 **고정 DB 1개**.
 
@@ -34,7 +34,7 @@
 
 ### 6.1 인증
 - Clerk로 회원가입/로그인. 모든 페이지와 API는 인증 필요.
-- 모든 사용자별 쿼리는 `userId` 조건을 포함.
+- 단일 사용자 앱이므로 `userId` 조건은 쓰지 않는다(인증은 접근 제한용).
 
 ### 6.2 뉴스 가져오기
 - 상단 "뉴스 가져오기" 버튼 클릭 시 두 RSS 피드를 수집.
@@ -69,10 +69,8 @@
 - Clerk 로그인/회원가입 페이지
 
 ## 8. 데이터 모델 (초안)
-- `articles`: id, source, url(unique), title_en, title_ko, summary_ko, published_at, fetched_at
-- `categories`: id, user_id, name, description, created_at
-- `article_categories`: user_id, article_id, category_id (user+article 유니크)
-- `notion_saves`: user_id, article_id, notion_page_id, saved_at (user+article 유니크)
+- `articles`: id, source, author, url(unique), title_en, title_ko, summary_ko, category_id(null=미분류, 카테고리 삭제 시 set null), notion_page_id(null=미저장), published_at, fetched_at
+- `categories`: id, name(unique), description, created_at
 
 ## 9. API (초안)
 - `POST /api/news/fetch`: RSS 수집·번역·요약·분류
