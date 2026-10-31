@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `PRD.md`(한국어)가 제품 명세다. 현재는 `create-next-app`으로 만든 기본 템플릿(Next.js 16 App Router, TypeScript, Tailwind CSS 4, ESLint, `src/` 디렉터리, alias `@/*`)만 있고, PRD의 기능은 아직 구현되지 않았다. PRD §11의 구현 순서를 따른다. Clerk, Drizzle/Neon, rss-parser, Anthropic SDK, Notion MCP 의존성은 아직 설치되지 않았다.
 
+## UI 가이드
+
+화면이나 컴포넌트를 만들거나 수정하기 전에 `ui.md`를 읽는다. 색상·타이포그래피 토큰, 대시보드 레이아웃, 카테고리 바, 뉴스 카드 등 Tailwind 스타일 규칙이 정리되어 있으며, UI 코드는 이 문서를 따른다.
+
 ## 명령어
 
 ```
