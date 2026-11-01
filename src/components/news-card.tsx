@@ -1,8 +1,10 @@
 import type { Article } from "@/db/schema";
+import { SaveNewsButton } from "@/components/save-news-button";
 
 type NewsCardProps = {
   article: Pick<
     Article,
+    | "id"
     | "source"
     | "url"
     | "titleEn"
@@ -64,11 +66,10 @@ export function NewsCard({ article }: NewsCardProps) {
             미분류
           </span>
         )}
-        {article.notionPageId && (
-          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            저장됨 ✓
-          </span>
-        )}
+        <SaveNewsButton
+          articleId={article.id}
+          saved={Boolean(article.notionPageId)}
+        />
       </div>
     </article>
   );
