@@ -1,14 +1,15 @@
 import Parser from "rss-parser";
-import { eq, isNull } from "drizzle-orm";
+import { desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { ensureDefaultCategories } from "@/db/seed";
 import { articles, categories, type NewArticle } from "@/db/schema";
 import { enrichArticle } from "@/lib/claude/enrich-article";
 import { FEEDS, type Feed } from "./feeds";
 
-const WINDOW_MS = 24 * 60 * 60 * 1000;
-// 피드당 가져올 최신 기사 수 (PRD 기본값)
-const MAX_ITEMS_PER_FEED = 20;
+// 최근 2주 안에 발행된 기사만 가져온다.
+const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+// 페이지를 지원하는 피드에서 읽을 최대 페이지 수 (TechCrunch는 페이지당 20건, 2주에 약 7페이지)
+const MAX_FEED_PAGES = 10;
 // Claude 동시 호출 수
 const CONCURRENCY = 5;
 // 한 번에 처리할 최대 기사 수 (타임아웃 방지)
@@ -19,7 +20,7 @@ const FALLBACK_CATEGORY = "기타";
 const parser = new Parser({ timeout: 10_000 });
 
 export type CollectResult = {
-  /** 24시간 이내로 파싱된 기사 수 */
+  /** 2주 이내로 파싱된 기사 수 */
   fetched: number;
   /** 새로 저장된 기사 수 */
   inserted: number;
@@ -29,6 +30,8 @@ export type CollectResult = {
   processed: number;
   /** 번역·요약·분류에 실패한 기사 수 (다음 가져오기 때 다시 시도) */
   failed: number;
+  /** 이번에 처리하지 못해 다음 가져오기를 기다리는 기사 수 (실패한 기사 포함) */
+  remaining: number;
   /** 파싱에 실패한 소스 이름 */
   failedSources: string[];
 };
@@ -58,30 +61,48 @@ function toSnippet(raw: string | undefined): string {
 }
 
 async function parseFeed(feed: Feed, since: Date): Promise<ParsedItem[]> {
-  const parsed = await parser.parseURL(feed.url);
   const result: ParsedItem[] = [];
+  const lastPage = feed.paginated ? MAX_FEED_PAGES : 1;
 
-  for (const item of parsed.items.slice(0, MAX_ITEMS_PER_FEED)) {
-    const dateStr = item.isoDate ?? item.pubDate;
-    const publishedAt = dateStr ? new Date(dateStr) : null;
-    // 발행 시각이 없거나 24시간보다 오래된 기사는 제외
-    if (!publishedAt || Number.isNaN(publishedAt.getTime())) continue;
-    if (publishedAt < since) continue;
+  for (let page = 1; page <= lastPage; page++) {
+    let items: Parser.Item[];
+    try {
+      const url = page === 1 ? feed.url : `${feed.url}?paged=${page}`;
+      items = (await parser.parseURL(url)).items;
+    } catch (error) {
+      // 첫 페이지 실패만 피드 실패로 보고, 이후 페이지는 읽은 만큼만 쓴다.
+      if (page === 1) throw error;
+      console.error(`[rss] ${feed.source} ${page}페이지 파싱 실패:`, error);
+      break;
+    }
 
-    const url = item.link ? normalizeUrl(item.link) : null;
-    const title = item.title?.trim();
-    if (!url || !title) continue;
+    let reachedOldItem = false;
+    for (const item of items) {
+      const dateStr = item.isoDate ?? item.pubDate;
+      const publishedAt = dateStr ? new Date(dateStr) : null;
+      // 발행 시각이 없거나 2주보다 오래된 기사는 제외
+      if (!publishedAt || Number.isNaN(publishedAt.getTime())) continue;
+      if (publishedAt < since) {
+        reachedOldItem = true;
+        continue;
+      }
 
-    result.push({
-      article: {
-        source: feed.source,
-        author: item.creator?.trim() || null,
-        url,
-        titleEn: title,
-        publishedAt,
-      },
-      snippet: toSnippet(item.contentSnippet ?? item.content),
-    });
+      const url = item.link ? normalizeUrl(item.link) : null;
+      const title = item.title?.trim();
+      if (!url || !title) continue;
+
+      result.push({
+        article: {
+          source: feed.source,
+          author: item.creator?.trim() || null,
+          url,
+          titleEn: title,
+          publishedAt,
+        },
+        snippet: toSnippet(item.contentSnippet ?? item.content),
+      });
+    }
+    if (reachedOldItem || items.length === 0) break;
   }
   return result;
 }
@@ -104,6 +125,10 @@ async function runPool<T>(
 
 // 아직 번역되지 않은 기사(새 기사 + 이전에 실패한 기사)를 Claude로 처리한다.
 async function enrichPending(snippets: Map<string, string>) {
+  const pendingTotal = await db.$count(articles, isNull(articles.titleKo));
+  if (pendingTotal === 0) return { processed: 0, failed: 0, remaining: 0 };
+
+  // 한 번에 다 처리하지 못할 수 있으니 최신 기사부터 처리한다.
   const pending = await db
     .select({
       id: articles.id,
@@ -112,8 +137,8 @@ async function enrichPending(snippets: Map<string, string>) {
     })
     .from(articles)
     .where(isNull(articles.titleKo))
+    .orderBy(desc(articles.publishedAt), desc(articles.id))
     .limit(MAX_ENRICH_PER_RUN);
-  if (pending.length === 0) return { processed: 0, failed: 0 };
 
   const cats = await db.select().from(categories);
   const idByName = new Map(cats.map((c) => [c.name, c.id]));
@@ -141,7 +166,7 @@ async function enrichPending(snippets: Map<string, string>) {
       console.error(`[claude] 기사 처리 실패 (id=${row.id}):`, error);
     }
   });
-  return { processed, failed };
+  return { processed, failed, remaining: pendingTotal - processed };
 }
 
 export async function collectArticles(): Promise<CollectResult> {
@@ -175,7 +200,7 @@ export async function collectArticles(): Promise<CollectResult> {
   }
 
   const snippets = new Map(items.map((i) => [i.article.url, i.snippet]));
-  const { processed, failed } = await enrichPending(snippets);
+  const { processed, failed, remaining } = await enrichPending(snippets);
 
   return {
     fetched: items.length,
@@ -183,6 +208,7 @@ export async function collectArticles(): Promise<CollectResult> {
     skipped: items.length - inserted,
     processed,
     failed,
+    remaining,
     failedSources,
   };
 }
