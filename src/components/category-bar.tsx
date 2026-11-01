@@ -5,6 +5,8 @@ type CategoryBarProps = {
   categories: Pick<Category, "id" | "name">[];
   // "all" | "uncategorized" | 카테고리 id
   selected: string;
+  // 카테고리를 바꿔도 유지할 검색어
+  keyword: string;
 };
 
 const chipBase =
@@ -36,27 +38,39 @@ function Chip({
   );
 }
 
-export function CategoryBar({ categories, selected }: CategoryBarProps) {
+export function CategoryBar({
+  categories,
+  selected,
+  keyword,
+}: CategoryBarProps) {
+  const hrefFor = (category?: string) => {
+    const qs = new URLSearchParams();
+    if (category) qs.set("category", category);
+    if (keyword) qs.set("q", keyword);
+    const s = qs.toString();
+    return s ? `/dashboard?${s}` : "/dashboard";
+  };
+
   return (
     <nav
       aria-label="카테고리"
-      className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0"
+      className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:min-w-0 sm:flex-1 sm:overflow-visible sm:px-0"
     >
       <ul className="flex w-max items-center gap-2 sm:w-auto sm:flex-wrap">
-        <Chip href="/dashboard" active={selected === "all"}>
+        <Chip href={hrefFor()} active={selected === "all"}>
           전체
         </Chip>
         {categories.map((c) => (
           <Chip
             key={c.id}
-            href={`/dashboard?category=${c.id}`}
+            href={hrefFor(String(c.id))}
             active={selected === String(c.id)}
           >
             {c.name}
           </Chip>
         ))}
         <Chip
-          href="/dashboard?category=uncategorized"
+          href={hrefFor("uncategorized")}
           active={selected === "uncategorized"}
         >
           미분류

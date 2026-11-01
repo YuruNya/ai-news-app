@@ -20,6 +20,10 @@ npm run lint    # ESLint
 
 테스트 러너는 설정되어 있지 않다.
 
+## 개발 워크플로
+
+새 기능은 `/news-workflow [브랜치-이름]` 명령(`.claude/commands/news-workflow.md`)으로 개발한다. main 확인 → 브랜치 생성 → 스택·컨벤션 안내 → 개발 → `완료` 또는 `done` 입력 → 변경 파일 확인과 커밋 메시지 제안 → 사용자 확인 후 커밋 → main에 `--no-ff` 병합 → 작업 요약 순서로 진행한다. 브랜치 이름을 생략하면 기능을 물어본 뒤 영어 소문자-하이픈 형식으로 제안한다.
+
 ## Next.js 주의
 
 `AGENTS.md`에 따라, 이 Next.js 버전(16.x)은 기존 지식과 다른 점(API, 규칙, 파일 구조)이 있다. 코드를 쓰기 전에 `node_modules/next/dist/docs/`의 관련 가이드를 읽고 deprecation 안내를 따른다. 예를 들어 인증 보호 라우트를 만들 때 `middleware` 규칙이 바뀌었을 수 있으니 확인한다.

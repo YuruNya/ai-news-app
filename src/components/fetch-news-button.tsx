@@ -26,6 +26,10 @@ export function FetchNewsButton() {
           ? ` (${r.failedSources.join(", ")} 실패)`
           : "";
       const failedAi = r.failed > 0 ? ` · 번역 실패 ${r.failed}건` : "";
+      const waiting =
+        r.remaining > 0
+          ? ` · 번역 대기 ${r.remaining}건 (다시 누르면 이어서 처리해요)`
+          : "";
       const hasError = r.failedSources.length > 0 || r.failed > 0;
       setNotice({
         kind: hasError ? "error" : "ok",
@@ -34,7 +38,8 @@ export function FetchNewsButton() {
             ? `${r.inserted}건 새로 저장했어요`
             : "새 기사가 없어요") +
           failedFeeds +
-          failedAi,
+          failedAi +
+          waiting,
       });
       startTransition(() => router.refresh());
     } catch (e) {
