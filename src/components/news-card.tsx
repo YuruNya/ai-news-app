@@ -1,4 +1,5 @@
 import type { Article } from "@/db/schema";
+import { DeleteNewsButton } from "@/components/delete-news-button";
 import { SaveNewsButton } from "@/components/save-news-button";
 
 type NewsCardProps = {
@@ -33,10 +34,16 @@ export function NewsCard({ article }: NewsCardProps) {
 
   return (
     <article className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="-mt-1.5 -mr-2 mb-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
         <span className="font-medium">{article.source}</span>
         <span aria-hidden>·</span>
         <time dateTime={date.toISOString()}>{formatDate(date)}</time>
+        <div className="ml-auto">
+          <DeleteNewsButton
+            articleId={article.id}
+            title={article.titleKo ?? article.titleEn}
+          />
+        </div>
       </div>
 
       <h2 className="text-base font-semibold leading-snug">
