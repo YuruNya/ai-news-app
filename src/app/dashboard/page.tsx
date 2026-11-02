@@ -9,6 +9,7 @@ import { articles, categories } from "@/db/schema";
 import { CategoryBar } from "@/components/category-bar";
 import { FetchNewsButton } from "@/components/fetch-news-button";
 import { NewsCard } from "@/components/news-card";
+import { NewsCountBadge } from "@/components/news-count-badge";
 import { Pagination } from "@/components/pagination";
 import { SearchBar } from "@/components/search-bar";
 
@@ -18,7 +19,9 @@ export const metadata: Metadata = {
   title: "대시보드 · AI 뉴스 수집기",
 };
 
-export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+export default function DashboardPage({
+  searchParams,
+}: PageProps<"/dashboard">) {
   return (
     <div className="min-h-screen flex-1 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
@@ -61,10 +64,14 @@ async function DashboardContent({
   const param = typeof category === "string" ? category : undefined;
   const keyword = typeof q === "string" ? q.trim() : "";
 
-  const categoryList = await db
-    .select({ id: categories.id, name: categories.name })
-    .from(categories)
-    .orderBy(categories.id);
+  const [categoryList, totalArticles] = await Promise.all([
+    db
+      .select({ id: categories.id, name: categories.name })
+      .from(categories)
+      .orderBy(categories.id),
+    // 상단 배지용 전체 기사 수 (필터·검색 미적용)
+    db.$count(articles),
+  ]);
 
   const selectedCategory = categoryList.find((c) => String(c.id) === param);
   const selected =
@@ -140,6 +147,7 @@ async function DashboardContent({
 
   return (
     <>
+      <NewsCountBadge count={totalArticles} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <CategoryBar
           categories={categoryList}
@@ -171,6 +179,7 @@ async function DashboardContent({
 function DashboardSkeleton() {
   return (
     <>
+      <div className="h-7 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
