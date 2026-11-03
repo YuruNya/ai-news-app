@@ -1,15 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useNewsFetching } from "@/components/news-fetching";
 import type { CollectResult } from "@/lib/rss/collect";
 
 type Notice = { kind: "ok" | "error"; text: string };
 
 export function FetchNewsButton() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [refreshing, startTransition] = useTransition();
+  // 진행 상태는 카드 목록의 스켈레톤과 공유한다.
+  const { fetching: busy, setLoading, startRefresh } = useNewsFetching();
   const [notice, setNotice] = useState<Notice | null>(null);
 
   async function handleClick() {
@@ -41,7 +42,7 @@ export function FetchNewsButton() {
           failedAi +
           waiting,
       });
-      startTransition(() => router.refresh());
+      startRefresh(() => router.refresh());
     } catch (e) {
       setNotice({
         kind: "error",
@@ -51,8 +52,6 @@ export function FetchNewsButton() {
       setLoading(false);
     }
   }
-
-  const busy = loading || refreshing;
 
   return (
     <div className="flex items-center gap-3">

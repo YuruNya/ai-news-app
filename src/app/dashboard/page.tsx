@@ -9,6 +9,8 @@ import { articles, categories } from "@/db/schema";
 import { CategoryBar } from "@/components/category-bar";
 import { FetchNewsButton } from "@/components/fetch-news-button";
 import { NewsCard } from "@/components/news-card";
+import { NewsCardSkeletonGrid } from "@/components/news-card-skeleton";
+import { NewsFetchingProvider, NewsListArea } from "@/components/news-fetching";
 import { NewsCountBadge } from "@/components/news-count-badge";
 import { Pagination } from "@/components/pagination";
 import { SearchBar } from "@/components/search-bar";
@@ -23,31 +25,33 @@ export default function DashboardPage({
   searchParams,
 }: PageProps<"/dashboard">) {
   return (
-    <div className="min-h-screen flex-1 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <h1 className="text-lg font-bold tracking-tight">
-            {/* 검색어·카테고리·페이지를 모두 지우고 처음 화면으로 돌아간다. */}
-            <Link
-              href="/dashboard"
-              className="rounded transition hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:hover:text-indigo-400"
-            >
-              AI 뉴스 수집기
-            </Link>
-          </h1>
-          {/* 프로필 사진·이름을 보여주고, 누르면 계정 관리와 로그아웃 메뉴가 열린다. */}
-          <div className="flex items-center gap-3">
-            <FetchNewsButton />
-            <UserButton showName />
+    <NewsFetchingProvider>
+      <div className="min-h-screen flex-1 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <h1 className="text-lg font-bold tracking-tight">
+              {/* 검색어·카테고리·페이지를 모두 지우고 처음 화면으로 돌아간다. */}
+              <Link
+                href="/dashboard"
+                className="rounded transition hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:hover:text-indigo-400"
+              >
+                AI 뉴스 수집기
+              </Link>
+            </h1>
+            {/* 프로필 사진·이름을 보여주고, 누르면 계정 관리와 로그아웃 메뉴가 열린다. */}
+            <div className="flex items-center gap-3">
+              <FetchNewsButton />
+              <UserButton showName />
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-        <Suspense fallback={<DashboardSkeleton />}>
-          <DashboardContent searchParams={searchParams} />
-        </Suspense>
-      </main>
-    </div>
+        </header>
+        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+          <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent searchParams={searchParams} />
+          </Suspense>
+        </main>
+      </div>
+    </NewsFetchingProvider>
   );
 }
 
@@ -156,21 +160,23 @@ async function DashboardContent({
         />
         <SearchBar keyword={keyword} selected={selected} />
       </div>
-      {rows.length === 0 ? (
-        <p className="py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-          {keyword
-            ? `'${keyword}'에 해당하는 기사가 없어요.`
-            : selected === "all"
-              ? "아직 기사가 없어요."
-              : "이 카테고리에는 기사가 없어요."}
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((row) => (
-            <NewsCard key={row.id} article={row} />
-          ))}
-        </div>
-      )}
+      <NewsListArea>
+        {rows.length === 0 ? (
+          <p className="py-16 text-center text-sm text-slate-500 dark:text-slate-400">
+            {keyword
+              ? `'${keyword}'에 해당하는 기사가 없어요.`
+              : selected === "all"
+                ? "아직 기사가 없어요."
+                : "이 카테고리에는 기사가 없어요."}
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((row) => (
+              <NewsCard key={row.id} article={row} />
+            ))}
+          </div>
+        )}
+      </NewsListArea>
       <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </>
   );
@@ -191,14 +197,7 @@ function DashboardSkeleton() {
         </div>
         <div className="h-8 animate-pulse rounded-lg bg-slate-200 sm:w-72 dark:bg-slate-800" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-44 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800"
-          />
-        ))}
-      </div>
+      <NewsCardSkeletonGrid />
     </>
   );
 }
