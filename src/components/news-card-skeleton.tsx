@@ -9,15 +9,16 @@ export function NewsCardSkeleton() {
     >
       <div className={`mb-3 h-3 w-32 ${bar}`} />
       <div className="space-y-2">
-        <div className={`h-4 w-full ${bar}`} />
-        <div className={`h-4 w-2/3 ${bar}`} />
+        <div className={`h-[17px] w-full ${bar}`} />
+        <div className={`h-[17px] w-2/3 ${bar}`} />
       </div>
+      <div className={`mt-2 h-3 w-1/2 ${bar}`} />
       <div className="mt-4 space-y-2">
         <div className={`h-3 w-full ${bar}`} />
         <div className={`h-3 w-full ${bar}`} />
         <div className={`h-3 w-4/5 ${bar}`} />
       </div>
-      <div className="mt-auto flex items-center justify-between pt-5">
+      <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
         <div className="h-5 w-14 rounded-full bg-slate-200 dark:bg-slate-800" />
         <div className="h-7 w-24 rounded-lg bg-slate-200 dark:bg-slate-800" />
       </div>
