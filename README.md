@@ -127,6 +127,11 @@ src/
 
 제품 명세는 `PRD.md`, UI 규칙은 `ui.md`에 있습니다.
 
+## 사용한 플러그인
+
+- Frontend Design : UI 디자인 품질 향상
+- commit-commands : 깃 워크플로 자동화
+
 ## 아직 구현되지 않은 기능
 
 - `/categories` 카테고리 관리 화면 (추가·수정·삭제)
