@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
 import { CategoryBar } from "@/components/category-bar";
 import { FetchNewsButton } from "@/components/fetch-news-button";
+import { Footer } from "@/components/footer";
 import { NewsCard } from "@/components/news-card";
 import { NewsCardSkeletonGrid } from "@/components/news-card-skeleton";
 import { NewsFetchingProvider, NewsListArea } from "@/components/news-fetching";
@@ -26,7 +27,7 @@ export default function DashboardPage({
 }: PageProps<"/dashboard">) {
   return (
     <NewsFetchingProvider>
-      <div className="min-h-screen flex-1 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="flex min-h-screen flex-1 flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
             <h1 className="text-lg font-bold tracking-tight">
@@ -45,11 +46,12 @@ export default function DashboardPage({
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+        <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:px-6">
           <Suspense fallback={<DashboardSkeleton />}>
             <DashboardContent searchParams={searchParams} />
           </Suspense>
         </main>
+        <Footer />
       </div>
     </NewsFetchingProvider>
   );
