@@ -15,6 +15,7 @@ import { NewsFetchingProvider, NewsListArea } from "@/components/news-fetching";
 import { NewsCountBadge } from "@/components/news-count-badge";
 import { Pagination } from "@/components/pagination";
 import { SearchBar } from "@/components/search-bar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const PAGE_SIZE = 9;
 
@@ -43,6 +44,7 @@ export default function DashboardPage({
             <div className="flex items-center gap-3">
               <FetchNewsButton />
               <UserButton showName />
+              <ThemeToggle />
             </div>
           </div>
         </header>

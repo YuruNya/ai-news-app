@@ -8,7 +8,7 @@ Tailwind CSS 4 기반의 UI 스타일 가이드다. 깔끔하고 읽기 편한 �
 - **한 가지 강조색:** 인디고 계열 하나만 강조에 쓴다. 나머지는 중립 회색(slate)이다.
 - **일관된 둥근 모서리와 얕은 그림자:** 카드와 칩은 둥글게, 그림자는 최소한으로 한다.
 - **모바일 우선 반응형:** 기본 스타일은 모바일, `sm:` `lg:`로 확장한다.
-- **다크 모드:** `prefers-color-scheme`을 따른다. 모든 색은 라이트/다크 쌍으로 정의한다.
+- **다크 모드:** `<html>`의 `.dark` 클래스로 켠다. 헤더 오른쪽 끝의 토글(`ThemeToggle`)로 전환하며, 선택은 `localStorage`에 저장되고 저장값이 없으면 시스템 설정(`prefers-color-scheme`)을 따른다. 모든 색은 라이트/다크 쌍으로 정의한다.
 
 ## 2. 디자인 토큰
 
@@ -189,5 +189,5 @@ Tailwind CSS 4 기반의 UI 스타일 가이드다. 깔끔하고 읽기 편한 �
 ## 6. 구현 메모
 
 - `globals.css`의 `body` 폰트가 Arial로 고정되어 있다. Geist를 쓰려면 `font-family`를 제거하고 `<body>`에 `font-sans`를 적용한다.
-- 현재 다크 모드는 CSS 변수 기반이다. 위 `dark:` 클래스는 Tailwind 4 기본값(`prefers-color-scheme`)과 같은 방식으로 동작하므로 추가 설정이 필요 없다.
+- `dark:` 변형은 `globals.css`의 `@custom-variant dark (&:where(.dark, .dark *));`로 클래스 기반이다. 초기 테마는 `layout.tsx`의 인라인 스크립트(`src/lib/theme.ts`)가 하이드레이션 전에 적용해 깜빡임을 막는다.
 - 색 클래스를 컴포넌트마다 반복하지 않도록 `Chip`, `NewsCard`, `Button` 같은 작은 컴포넌트로 묶는다.
